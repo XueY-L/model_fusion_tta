@@ -1,0 +1,7 @@
+*.pt
+*.pth
+*.txt
+
+wandb_runs/
+output/
+checkpoint/
