@@ -1,5 +1,5 @@
 '''
-CUDA_VISIBLE_DEVICES=0 python3 infer_lambdas.py  --target_domain shot_noise --bs 32 --severity 5
+CUDA_VISIBLE_DEVICES=0 python3 infer_lambdas.py  --target_domain shot_noise --bs 1 --severity 5
 暴力搜索（grid searching）出每张需要的最佳lambda
 '''
 
@@ -7,11 +7,9 @@ import argparse
 import random
 import sys
 import time
-sys.path.append('..')
-sys.path.append('/home/yxue/git-re-basin-pytorch')
 import torch
 import torch.nn.functional as F
-import torchvision.models as models
+import torchvision.models as tmodels
 from utils.lerp import lerp_multi
 from utils.model_path import get_model_path
 from tqdm import tqdm
@@ -35,35 +33,28 @@ torch.cuda.manual_seed_all(args.seed)  # 为当前GPU设置随机种子
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
-args.source_domains = ['brightness','defocus_blur','gaussian_noise','jpeg_compression','snow']
+args.source_domains = ['gaussian_noise', 'defocus_blur', 'snow', 'jpeg_compression']
 
 dataloader = load_imagenetc(args.bs, args.severity, '/home/yxue/datasets', False, [args.target_domain], prepr='Res256Crop224')
 
-model_path = get_model_path(args)
-
-param_ls = []
-for d in args.source_domains:
-    print(f'==> Loading {d} Model')
-    param_temp = torch.load(model_path[d], map_location='cpu')['model']
-    param_ls.append(param_temp)
+param_ls = get_model_path(args)
+print(len(param_ls))
 
 lambdas = torch.linspace(0, 1, steps=args.num_lambda)
 print(lambdas)
 model_ls = []
 for lam1 in lambdas:
-    others4 = [x for x in lambdas if x + lam1 <= 1]
-    for lam2 in others4:
-        others3 = [x for x in lambdas if lam1 + lam2 + x <= 1]
-        for lam3 in others3:
-            others2 = [x for x in lambdas if lam1 + lam2 + lam3 + x <= 1]
-            for lam4 in others2:
-                others1 = [x for x in lambdas if lam1 + lam2 + lam3 + lam4 + x == 1]
-                for lam5 in others1:
-                    weights = torch.tensor([lam1, lam2, lam3, lam4, lam5])
-                    param_f = lerp_multi(param_ls, weights)
-                    model = load_model('Standard_R50', "./ckpt", 'imagenet', ThreatModel.corruptions)
-                    model.load_state_dict(param_f)
-                    model_ls.append(model)
+    others3 = [x for x in lambdas if x + lam1 <= 1]
+    for lam2 in others3:
+        others2 = [x for x in lambdas if lam1 + lam2 + x <= 1]
+        for lam3 in others2:
+            others1 = [x for x in lambdas if lam1 + lam2 + lam3 + x == 1]
+            for lam4 in others1:
+                weights = torch.tensor([lam1, lam2, lam3, lam4])
+                param_f = lerp_multi(param_ls, weights)
+                model = load_model('Standard_R50', "./ckpt", 'imagenet', ThreatModel.corruptions)
+                model.load_state_dict(param_f)
+                model_ls.append(model)
 print(len(model_ls))
 
 for batch_idx, (data, label, paths) in enumerate(dataloader):  # whole test loader
