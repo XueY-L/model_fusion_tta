@@ -13,6 +13,7 @@ import torch
 import torch.nn.functional as F
 import torchvision.models as models
 from utils.lerp import lerp_multi
+from utils.model_path import get_model_path
 from tqdm import tqdm
 import numpy as np
 from robustbench.data import load_imagenetc
@@ -38,13 +39,7 @@ args.source_domains = ['brightness','defocus_blur','gaussian_noise','jpeg_compre
 
 dataloader = load_imagenetc(args.bs, args.severity, '/home/yxue/datasets', False, [args.target_domain], prepr='Res256Crop224')
 
-model_path = {  # pretrained resnet50-lr0.001
-    'brightness': f'/home/yxue/TTA-try/checkpoint/ckpt_[\'brightness\']_[{args.severity}].pt',
-    'defocus_blur': f'/home/yxue/TTA-try/checkpoint/ckpt_[\'defocus_blur\']_[{args.severity}].pt',
-    'gaussian_noise': f'/home/yxue/TTA-try/checkpoint/ckpt_[\'gaussian_noise\']_[{args.severity}].pt',
-    'jpeg_compression': f'/home/yxue/TTA-try/checkpoint/ckpt_[\'jpeg_compression\']_[{args.severity}].pt',
-    'snow': f'/home/yxue/TTA-try/checkpoint/ckpt_[\'snow\']_[{args.severity}].pt',
-}
+model_path = get_model_path(args)
 
 param_ls = []
 for d in args.source_domains:
@@ -72,8 +67,8 @@ for lam1 in lambdas:
 print(len(model_ls))
 
 for batch_idx, (data, label, paths) in enumerate(dataloader):  # whole test loader
-    f = open(f'./{args.target_domain}{args.severity}_{args.source_domains}_bs{args.bs}_seed{args.seed}_{args.num_lambda}lambdas.txt', 'a')
-    f2 = open(f'./{args.target_domain}{args.severity}_{args.source_domains}_bs{args.bs}_seed{args.seed}_{args.num_lambda}lambdas_loss.txt', 'a')
+    f = open(f'./暴搜结果/{args.target_domain}{args.severity}_{args.source_domains}_bs{args.bs}_seed{args.seed}_{args.num_lambda}lambdas.txt', 'a')
+    f2 = open(f'./暴搜结果/{args.target_domain}{args.severity}_{args.source_domains}_bs{args.bs}_seed{args.seed}_{args.num_lambda}lambdas_loss.txt', 'a')
     s_time = time.time()
     data, label = data.cuda(), label.cuda()
     test_acc_interp_naive, test_loss_interp_naive = [], []

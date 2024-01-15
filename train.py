@@ -5,7 +5,6 @@ import logging
 import random
 import numpy as np
 import torch
-import torch.optim as optim
 import torchvision.models as tmodels
 from robustbench.data import load_imagenetc
 from robustbench.model_zoo.enums import ThreatModel
