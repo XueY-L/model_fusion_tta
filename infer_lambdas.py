@@ -1,5 +1,5 @@
 '''
-CUDA_VISIBLE_DEVICES=0 python3 infer_lambdas.py  --target_domain shot_noise --bs 1 --severity 5
+CUDA_VISIBLE_DEVICES=0 python3 infer_lambdas.py  --target_domain glass_blur --bs 1 --severity 5
 暴力搜索（grid searching）出每张需要的最佳lambda
 '''
 
@@ -58,6 +58,7 @@ for lam1 in lambdas:
 print(len(model_ls))
 
 for batch_idx, (data, label, paths) in enumerate(dataloader):  # whole test loader
+    if batch_idx == 500: break
     f = open(f'./暴搜结果/{args.target_domain}{args.severity}_{args.source_domains}_bs{args.bs}_seed{args.seed}_{args.num_lambda}lambdas.txt', 'a')
     f2 = open(f'./暴搜结果/{args.target_domain}{args.severity}_{args.source_domains}_bs{args.bs}_seed{args.seed}_{args.num_lambda}lambdas_loss.txt', 'a')
     s_time = time.time()

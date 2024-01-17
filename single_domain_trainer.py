@@ -6,9 +6,10 @@ import torch
 import torch.utils.data
 import numpy as np
 from torch import nn
+from torch.utils.data import TensorDataset, DataLoader
 import wandb
 from utils.averageMeter import AverageMeter
-from robustbench.data import load_imagenetc
+from robustbench.data import load_imagenetc, load_cifar100c
 
 
 class Trainer:
@@ -34,11 +35,17 @@ class Trainer:
         self.model.eval()
         losses, top1 = AverageMeter(), AverageMeter()
 
-        test_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, False, self._C.CORRUPTION.TYPE, prepr='Res256Crop224')
+        # 训练数据集
+        if 'imagenet' in self._C.CORRUPTION.DATASET:
+            self.test_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, False, self._C.CORRUPTION.TYPE, prepr='Res256Crop224')
+        elif 'cifar100' in self._C.CORRUPTION.DATASET:
+            x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
+            dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
+            self.test_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=False)
 
         if flag:
             with torch.no_grad():
-                for batch_idx, (data, label, path) in enumerate(test_loader):
+                for batch_idx, (data, label, path) in enumerate(self.test_loader):
                     data, label = data.cuda(), label.cuda()
                     rst = self.model(data)
                     l = self.loss(rst, label)
@@ -122,15 +129,20 @@ class Trainer:
             os.mkdir(path)
         wandb.init(
             project='TTA',
-            name=f'{self._C.CORRUPTION.TYPE}_{self._C.CORRUPTION.SEVERITY}_training',
+            name=f'{self._C.CORRUPTION.DATASET}_{self._C.CORRUPTION.TYPE}_{self._C.CORRUPTION.SEVERITY}_training',
             dir=path,
         )
         wandb.watch(self.model)
         wandb.config.update(self._C)
 
         # 训练数据集
-        self.train_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE, prepr='train')
-        
+        if 'imagenet' in self._C.CORRUPTION.DATASET:
+            self.train_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE, prepr='train')
+        elif 'cifar100' in self._C.CORRUPTION.DATASET:
+            x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
+            dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
+            self.train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
+            
         best_acc = -1
 
         for epoch in range(self.start_epoch+1, self.epochs):
