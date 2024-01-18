@@ -231,13 +231,14 @@ def load_corruptions_cifar(
     if shuffle:
         rand_idx = np.random.permutation(np.arange(len(x_test)))
         x_test, y_test = x_test[rand_idx], y_test[rand_idx]
-
+    
     # Make it in the PyTorch format
     x_test = np.transpose(x_test, (0, 3, 1, 2))
+    
     # Make it compatible with our models
-    x_test = x_test.astype(np.float32) / 255
+    # x_test = x_test.astype(np.float32) / 255
     # Make sure that we get exactly n_examples but not a few samples more
-    x_test = torch.tensor(x_test)[:n_examples]
-    y_test = torch.tensor(y_test)[:n_examples]
+    x_test = torch.tensor(x_test)[:n_examples].float()
+    y_test = torch.tensor(y_test, dtype=torch.int64)[:n_examples]
 
     return x_test, y_test

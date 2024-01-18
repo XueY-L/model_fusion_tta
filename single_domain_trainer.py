@@ -7,6 +7,7 @@ import torch.utils.data
 import numpy as np
 from torch import nn
 from torch.utils.data import TensorDataset, DataLoader
+import torchvision.transforms as transforms
 import wandb
 from utils.averageMeter import AverageMeter
 from robustbench.data import load_imagenetc, load_cifar100c
@@ -40,6 +41,13 @@ class Trainer:
             self.test_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, False, self._C.CORRUPTION.TYPE, prepr='Res256Crop224')
         elif 'cifar100' in self._C.CORRUPTION.DATASET:
             x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
+            transform_test = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.3, 0.3, 0.3))
+            ])
+            for i in range(x_test.size(0)):
+                x_test[i] = transform_test(x_test[i])
             dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
             self.test_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=False)
 
@@ -140,6 +148,17 @@ class Trainer:
             self.train_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE, prepr='train')
         elif 'cifar100' in self._C.CORRUPTION.DATASET:
             x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
+
+            transform_train = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomRotation(15),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.3, 0.3, 0.3))
+            ])
+            for i in range(x_test.size(0)):
+                x_test[i] = transform_train(x_test[i])
             dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
             self.train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
             

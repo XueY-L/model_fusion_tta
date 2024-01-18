@@ -16,7 +16,6 @@ from single_domain_trainer import Trainer
 load_cfg_fom_args_cifar100c('Cifar100C training')
 # configure model
 base_model = load_model(cfg.MODEL.ARCH, cfg.CKPT_DIR, cfg.CORRUPTION.DATASET, ThreatModel.corruptions)
-print(base_model)
 
 # param = torch.load('checkpoint/ckpt_[\'jpeg_compression\']_[5].pt', map_location='cpu')['model']
 # base_model.load_state_dict(param)
@@ -36,5 +35,5 @@ trainer = Trainer(
     _C=cfg, 
 )
 
-# trainer.train()
+trainer.train()
 # trainer.evaluate(flag=False)
