@@ -1,5 +1,5 @@
 '''
-CUDA_VISIBLE_DEVICES=0 python -u train.py --cfg train_imagenetc.yaml 
+CUDA_VISIBLE_DEVICES=2 python -u train.py --cfg train_imagenetc.yaml 
 '''
 import sys
 sys.path.append('/home/yxue/model_fusion_tta')

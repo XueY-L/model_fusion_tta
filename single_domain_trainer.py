@@ -54,6 +54,7 @@ class Trainer:
         if flag:
             with torch.no_grad():
                 for batch_idx, (data, label, path) in enumerate(self.test_loader):
+                    if batch_idx < self.num_train_batch: continue
                     data, label = data.cuda(), label.cuda()
                     rst = self.model(data)
                     l = self.loss(rst, label)
@@ -93,8 +94,9 @@ class Trainer:
         print('\nEpoch: %d' % epoch)
         losses = AverageMeter()
         top1 = AverageMeter()
-
+        
         for batch_idx, (data, label, paths) in enumerate(self.train_loader):
+            if batch_idx == self.num_train_batch: break
             data, label = data.cuda(), label.cuda()
             rst = self.model(data)
             l = self.loss(rst, label)
@@ -113,7 +115,7 @@ class Trainer:
             top1.update(correct*100./label.size(0), label.size(0))
 
             # Log per-iteration data in wandb
-            self.iteration = batch_idx + epoch * len(self.train_loader)
+            self.iteration = batch_idx + epoch * self.num_train_batch
             wandb.log({"Iter Train Loss": losses.val}, step=self.iteration)
             wandb.log({"Iter Train Acc": top1.val}, step=self.iteration)
 
@@ -121,7 +123,7 @@ class Trainer:
                 print('Epoch: [{0}][{1}/{2}]\t'
                         'Lr {lr}\t'
                         'Loss {loss.avg:.4f}\t'
-                        'Acc {top1.avg:.3f}'.format(epoch, batch_idx, len(self.train_loader), 
+                        'Acc {top1.avg:.3f}'.format(epoch, batch_idx, self.num_train_batch, 
                         lr=self.optimizer.state_dict()['param_groups'][0]['lr'], loss=losses, top1=top1))
         
         # Log per-iteration data in wandb
@@ -146,23 +148,15 @@ class Trainer:
         # 训练数据集
         if 'imagenet' in self._C.CORRUPTION.DATASET:
             self.train_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE, prepr='train')
+            self.num_train_batch = int(5000 * len(self._C.CORRUPTION.TYPE) // self._C.TEST.BATCH_SIZE * 0.9)
         elif 'cifar100' in self._C.CORRUPTION.DATASET:
+            # 还没写多个源域数据加载
             x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
-
-            transform_train = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation(15),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.3, 0.3, 0.3))
-            ])
-            for i in range(x_test.size(0)):
-                x_test[i] = transform_train(x_test[i])
             dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
-            self.train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
+            train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
             
         best_acc = -1
+        print(f'Number of training batches: {self.num_train_batch}')
 
         for epoch in range(self.start_epoch+1, self.epochs):
             train_acc, train_loss = self.train_epoch(epoch)

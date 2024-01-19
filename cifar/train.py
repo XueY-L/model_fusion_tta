@@ -1,5 +1,5 @@
 '''
-CUDA_VISIBLE_DEVICES=1 python -u train.py --cfg train_cifar100c.yaml 
+CUDA_VISIBLE_DEVICES=0 python -u train.py --cfg train_cifar100c.yaml 
 '''
 import sys
 sys.path.append('/home/yxue/model_fusion_tta')
@@ -31,7 +31,7 @@ optimizer = torch.optim.SGD(
 trainer = Trainer(
     base_model,
     optimizer,
-    epochs=20,
+    epochs=50,
     _C=cfg, 
 )
 

@@ -15,7 +15,7 @@ CORRUPTION:
     # - defocus_blur
     # - glass_blur
     # - motion_blur
-    - zoom_blur
+    # - zoom_blur
     # - snow
     # - frost
     # - fog
@@ -23,7 +23,7 @@ CORRUPTION:
     # - contrast
     # - elastic_transform
     # - pixelate
-    # - jpeg_compression
+    - jpeg_compression
 OPTIM:
   METHOD: SGD
   LR: 0.001
