@@ -10,7 +10,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import torchvision.transforms as transforms
 import wandb
 from utils.averageMeter import AverageMeter
-from robustbench.data import load_imagenetc, load_cifar100c
+from robustbench.data import load_imagenetc, load_cifar100c, load_cifar10c
 
 
 class Trainer:
@@ -39,17 +39,10 @@ class Trainer:
         # 训练数据集
         if 'imagenet' in self._C.CORRUPTION.DATASET:
             self.test_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, False, self._C.CORRUPTION.TYPE, prepr='Res256Crop224')
-        elif 'cifar100' in self._C.CORRUPTION.DATASET:
-            x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
-            transform_test = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.3, 0.3, 0.3))
-            ])
-            for i in range(x_test.size(0)):
-                x_test[i] = transform_test(x_test[i])
-            dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
-            self.test_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=False)
+        elif 'cifar100' == self._C.CORRUPTION.DATASET:
+            self.test_loader = self.train_loader  # 训练和测试的数据增强一样
+        elif 'cifar10' == self._C.CORRUPTION.DATASET:
+            self.test_loader = self.train_loader  # 训练和测试的数据增强一样
 
         if flag:
             with torch.no_grad():
@@ -82,7 +75,7 @@ class Trainer:
             }
             torch.save(
                 checkpoint, 
-                f'./checkpoint/ckpt_{self._C.CORRUPTION.TYPE}_{self._C.CORRUPTION.SEVERITY}.pt'
+                f'/home/yxue/model_fusion_tta/{self._C.CORRUPTION.DATASET}/checkpoint/ckpt_{self._C.CORRUPTION.DATASET}_{self._C.CORRUPTION.TYPE}_{self._C.CORRUPTION.SEVERITY}.pt'
             )
             
             best_acc = acc
@@ -102,7 +95,6 @@ class Trainer:
             l = self.loss(rst, label)
             self.optimizer.zero_grad()
             l.backward()
-            # torch.nn.utils.clip_grad_norm_(self.nets.model.parameters(), max_norm=10)    #设置剪裁阈值为5 for nan
             self.optimizer.step()
             
             losses.update(l.item(), label.size(0))
@@ -149,11 +141,19 @@ class Trainer:
         if 'imagenet' in self._C.CORRUPTION.DATASET:
             self.train_loader = load_imagenetc(self._C.TEST.BATCH_SIZE, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE, prepr='train')
             self.num_train_batch = int(5000 * len(self._C.CORRUPTION.TYPE) // self._C.TEST.BATCH_SIZE * 0.9)
-        elif 'cifar100' in self._C.CORRUPTION.DATASET:
-            # 还没写多个源域数据加载
-            x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX, self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)  # torch.Size([10000, 3, 32, 32]) torch.Size([10000])
+        elif 'cifar100' == self._C.CORRUPTION.DATASET:
+            x_test, y_test = load_cifar100c(self._C.CORRUPTION.NUM_EX*len(self._C.CORRUPTION.TYPE), self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)
+            # print(x_test.size(), y_test.size())
             dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
-            train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
+            self.train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
+            self.num_train_batch = int(self._C.CORRUPTION.NUM_EX * len(self._C.CORRUPTION.TYPE) // self._C.TEST.BATCH_SIZE * 0.9)
+        elif self._C.CORRUPTION.DATASET == 'cifar10':
+            x_test, y_test = load_cifar10c(self._C.CORRUPTION.NUM_EX*len(self._C.CORRUPTION.TYPE), self._C.CORRUPTION.SEVERITY[0], self._C.DATA_DIR, True, self._C.CORRUPTION.TYPE)
+            print(x_test.size(), y_test.size())
+            dataset = TensorDataset(x_test, y_test, torch.tensor([0]*(y_test.size(0))))
+            self.train_loader = DataLoader(dataset, batch_size=self._C.TEST.BATCH_SIZE, shuffle=True)
+            self.num_train_batch = int(self._C.CORRUPTION.NUM_EX * len(self._C.CORRUPTION.TYPE) // self._C.TEST.BATCH_SIZE * 0.9)
+
             
         best_acc = -1
         print(f'Number of training batches: {self.num_train_batch}')

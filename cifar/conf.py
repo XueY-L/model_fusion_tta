@@ -170,7 +170,7 @@ def reset_cfg():
     cfg.merge_from_other_cfg(_CFG_DEFAULT)
 
 
-def load_cfg_fom_args_cifar100c(description="Config options."):
+def load_cfg_fom_args(description="Config options."):
     """Load config from command line args and set any specified options."""
     current_time = datetime.now().strftime("%y%m%d_%H%M%S")
     parser = argparse.ArgumentParser(description=description)

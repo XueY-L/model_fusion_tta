@@ -2,11 +2,11 @@ DATA_DIR: /home/yxue/datasets
 CKPT_DIR: /home/yxue/model_fusion_tta/cifar/ckpt
 MODEL:
   ADAPTATION: source
-  ARCH: Hendrycks2020AugMix_ResNeXt
+  ARCH: Standard
 TEST:
   BATCH_SIZE: 32
 CORRUPTION:
-  DATASET: cifar100
+  DATASET: cifar10
   SEVERITY:
     - 5
   TYPE:
@@ -25,8 +25,3 @@ CORRUPTION:
     # - elastic_transform
     - pixelate
     # - jpeg_compression
-OPTIM:
-  METHOD: SGD
-  LR: 0.001
-  MOMENTUM: 0.9
-  WD: 5e-4

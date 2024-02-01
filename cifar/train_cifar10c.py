@@ -1,5 +1,5 @@
 '''
-CUDA_VISIBLE_DEVICES=0 python -u train.py --cfg train_cifar100c.yaml 
+CUDA_VISIBLE_DEVICES=0 python -u /home/yxue/model_fusion_tta/cifar/train_cifar10c.py --cfg /home/yxue/model_fusion_tta/cifar/train_cifar10c.yaml
 '''
 import sys
 sys.path.append('/home/yxue/model_fusion_tta')
@@ -10,10 +10,10 @@ import torch
 import torchvision.models as tmodels
 from robustbench.model_zoo.enums import ThreatModel
 from robustbench.utils import load_model
-from conf_cifar100c import cfg, load_cfg_fom_args_cifar100c
+from conf import cfg, load_cfg_fom_args
 from single_domain_trainer import Trainer
 
-load_cfg_fom_args_cifar100c('Cifar100C training')
+load_cfg_fom_args('Cifar10C training')
 # configure model
 base_model = load_model(cfg.MODEL.ARCH, cfg.CKPT_DIR, cfg.CORRUPTION.DATASET, ThreatModel.corruptions)
 
@@ -31,7 +31,7 @@ optimizer = torch.optim.SGD(
 trainer = Trainer(
     base_model,
     optimizer,
-    epochs=50,
+    epochs=20,
     _C=cfg, 
 )
 
