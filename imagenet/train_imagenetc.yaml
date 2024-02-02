@@ -8,7 +8,7 @@ TEST:
 CORRUPTION:
   DATASET: imagenet
   SEVERITY:
-    - 3
+    - 1
   TYPE:
     # - gaussian_noise
     # - shot_noise
