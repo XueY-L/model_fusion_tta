@@ -19,12 +19,12 @@ CORRUPTION:
     # - zoom_blur
     # - snow
     # - frost
-    # - fog
+    - fog
     # - brightness
     # - contrast
     # - elastic_transform
     # - pixelate
-    - jpeg_compression
+    # - jpeg_compression
 OPTIM:
   METHOD: SGD
   LR: 0.001
