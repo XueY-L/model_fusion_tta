@@ -261,7 +261,6 @@ def load_corruptions_cifar(
     
     # Make it in the PyTorch format
     x_test = np.transpose(x_test, (0, 3, 1, 2))
-    
     # Make it compatible with our models
     x_test = x_test.astype(np.float32) / 255
     # Make sure that we get exactly n_examples but not a few samples more

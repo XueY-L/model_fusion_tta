@@ -75,7 +75,7 @@ class Trainer:
             }
             torch.save(
                 checkpoint, 
-                f'/home/yxue/model_fusion_tta/{self._C.CORRUPTION.DATASET}/checkpoint/ckpt_{self._C.CORRUPTION.TYPE}_{self._C.CORRUPTION.SEVERITY}.pt'
+                f'checkpoint/ckpt_{self._C.CORRUPTION.DATASET}_{self._C.CORRUPTION.TYPE}_{self._C.CORRUPTION.SEVERITY}.pt'
             )
             
             best_acc = acc

@@ -8,7 +8,7 @@ TEST:
 CORRUPTION:
   DATASET: cifar100
   SEVERITY:
-    - 5
+    - 1
   TYPE:
     # - gaussian_noise
     # - shot_noise
@@ -23,8 +23,8 @@ CORRUPTION:
     # - brightness
     # - contrast
     # - elastic_transform
-    - pixelate
-    # - jpeg_compression
+    # - pixelate
+    - jpeg_compression
 OPTIM:
   METHOD: SGD
   LR: 0.001
